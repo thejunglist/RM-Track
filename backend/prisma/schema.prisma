@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int              @id @default(autoincrement())
+  name         String
+  email        String           @unique
+  passwordHash String
+  role         String           @default("TECH")
+  createdAt    DateTime         @default(now())
+  checks       MonthlyCheck[]
+  assignments  RoomAssignment[]
+}
+
+model Building {
+  id        Int      @id @default(autoincrement())
+  name      String
+  location  String?
+  rooms     Room[]
+  createdAt DateTime @default(now())
+}
+
+model Room {
+  id          Int              @id @default(autoincrement())
+  buildingId  Int
+  building    Building         @relation(fields: [buildingId], references: [id], onDelete: Cascade)
+  number      String
+  floor       String?
+  name        String?
+  equipment   Equipment[]
+  checks      MonthlyCheck[]
+  assignments RoomAssignment[]
+  createdAt   DateTime         @default(now())
+
+  @@unique([buildingId, number])
+}
+
+model Equipment {
+  id        Int        @id @default(autoincrement())
+  roomId    Int
+  room      Room       @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  name      String
+  category  String?
+  assetTag  String?    @unique
+  questions Question[]
+  createdAt DateTime   @default(now())
+}
+
+model Question {
+  id          Int           @id @default(autoincrement())
+  equipmentId Int
+  equipment   Equipment     @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  text        String
+  answerType  String
+  order       Int           @default(0)
+  answers     CheckAnswer[]
+  createdAt   DateTime      @default(now())
+}
+
+model MonthlyCheck {
+  id          Int           @id @default(autoincrement())
+  roomId      Int
+  room        Room          @relation(fields: [roomId], references: [id])
+  techId      Int
+  tech        User          @relation(fields: [techId], references: [id])
+  month       Int
+  year        Int
+  status      String        @default("PENDING")
+  completedAt DateTime?
+  answers     CheckAnswer[]
+  createdAt   DateTime      @default(now())
+
+  @@unique([roomId, month, year])
+}
+
+model CheckAnswer {
+  id         Int          @id @default(autoincrement())
+  checkId    Int
+  check      MonthlyCheck @relation(fields: [checkId], references: [id], onDelete: Cascade)
+  questionId Int
+  question   Question     @relation(fields: [questionId], references: [id])
+  value      String
+  notes      String?
+  createdAt  DateTime     @default(now())
+
+  @@unique([checkId, questionId])
+}
+
+model RoomAssignment {
+  id        Int      @id @default(autoincrement())
+  techId    Int
+  tech      User     @relation(fields: [techId], references: [id], onDelete: Cascade)
+  roomId    Int
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([techId, roomId])
+}
