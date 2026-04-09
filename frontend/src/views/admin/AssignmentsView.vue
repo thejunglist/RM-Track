@@ -14,7 +14,7 @@ const buildings = ref<Building[]>([])
 const loading = ref(true)
 const dialog = ref(false)
 const saving = ref(false)
-const form = ref({ techId: 0, buildingId: 0 })
+const form = ref({ techId: '' as string, buildingId: 0 })
 
 const techs = () => users.value.filter(u => u.role === 'TECH')
 
@@ -38,7 +38,7 @@ async function load() {
 onMounted(load)
 
 function openCreate() {
-  form.value = { techId: techs()[0]?.id ?? 0, buildingId: buildings.value[0]?.id ?? 0 }
+  form.value = { techId: techs()[0]?.id ?? '', buildingId: buildings.value[0]?.id ?? 0 }
   dialog.value = true
 }
 

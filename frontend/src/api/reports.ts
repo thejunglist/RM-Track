@@ -1,4 +1,7 @@
-import api from './client'
+import { supabase } from '../lib/supabase'
 
-export const getMonthlyReport = (month: number, year: number) =>
-  api.get('/reports/monthly', { params: { month, year } }).then(r => r.data)
+export async function getMonthlyReport(month: number, year: number): Promise<unknown> {
+  const { data, error } = await supabase.rpc('monthly_report', { p_month: month, p_year: year })
+  if (error) throw error
+  return data
+}

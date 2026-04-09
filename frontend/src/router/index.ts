@@ -26,8 +26,8 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
 
-  if (!auth.isAuthenticated) {
-    await auth.fetchUser()
+  if (!auth.initialized) {
+    await auth.init()
   }
 
   if (to.meta.public) return true
@@ -35,7 +35,7 @@ router.beforeEach(async (to) => {
   if (!auth.isAuthenticated) return '/login'
 
   if (to.meta.role === 'ADMIN' && !auth.isAdmin) {
-    return auth.isAdmin ? '/admin/dashboard' : '/tech/dashboard'
+    return '/tech/dashboard'
   }
   if (to.meta.role === 'TECH' && auth.isAdmin) {
     return '/admin/dashboard'

@@ -3,7 +3,7 @@ export type AnswerType = 'YES_NO' | 'TEXT' | 'NUMERIC'
 export type CheckStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED'
 
 export interface User {
-  id: number
+  id: string   // UUID from Supabase Auth
   name: string
   email: string
   role: Role
@@ -51,8 +51,8 @@ export interface MonthlyCheck {
   id: number
   roomId: number
   room?: Room
-  techId: number
-  tech?: { id: number; name: string }
+  techId: string   // UUID
+  tech?: { id: string; name: string }
   month: number
   year: number
   status: CheckStatus
@@ -73,8 +73,8 @@ export interface CheckAnswer {
 
 export interface RoomAssignment {
   id: number
-  techId: number
-  tech?: { id: number; name: string; email: string }
+  techId: string   // UUID
+  tech?: { id: string; name: string; email: string }
   roomId: number
   room?: Room
   createdAt: string

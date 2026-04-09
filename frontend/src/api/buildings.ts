@@ -1,17 +1,53 @@
-import api from './client'
+import { supabase } from '../lib/supabase'
 import type { Building } from '../types'
 
-export const getBuildings = () => api.get<Building[]>('/buildings').then(r => r.data)
-export const createBuilding = (data: { name: string; location?: string }) =>
-  api.post<Building>('/buildings', data).then(r => r.data)
-export const updateBuilding = (id: number, data: Partial<{ name: string; location: string }>) =>
-  api.put<Building>(`/buildings/${id}`, data).then(r => r.data)
-export const deleteBuilding = (id: number) => api.delete(`/buildings/${id}`)
+const SELECT = 'id, name, location, createdAt:created_at'
+
+export async function getBuildings(): Promise<Building[]> {
+  const { data, error } = await supabase
+    .from('buildings')
+    .select(SELECT)
+    .order('name')
+  if (error) throw error
+  return data
+}
+
+export async function createBuilding(input: { name: string; location?: string }): Promise<Building> {
+  const { data, error } = await supabase
+    .from('buildings')
+    .insert(input)
+    .select(SELECT)
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateBuilding(id: number, input: Partial<{ name: string; location: string }>): Promise<Building> {
+  const { data, error } = await supabase
+    .from('buildings')
+    .update(input)
+    .eq('id', id)
+    .select(SELECT)
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteBuilding(id: number): Promise<void> {
+  const { error } = await supabase.from('buildings').delete().eq('id', id)
+  if (error) throw error
+}
 
 export interface BulkBuildingResult {
   imported: number
   skipped: number
 }
 
-export const bulkImportBuildings = (items: { name: string }[]) =>
-  api.post<BulkBuildingResult>('/buildings/bulk', items).then(r => r.data)
+export async function bulkImportBuildings(items: { name: string }[]): Promise<BulkBuildingResult> {
+  const { data, error } = await supabase
+    .from('buildings')
+    .upsert(items, { onConflict: 'name', ignoreDuplicates: true })
+    .select('id')
+  if (error) throw error
+  return { imported: data?.length ?? 0, skipped: items.length - (data?.length ?? 0) }
+}
