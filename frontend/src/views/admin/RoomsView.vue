@@ -95,25 +95,41 @@ function buildBuildingMap(): Map<string, number> {
   return map
 }
 
+const ROOM_CODE_RE = /^[A-Z]{2}\d+$/
+
 function parseCsvRooms(text: string): PreviewRoom[] | null {
   const lines = text.split(/\r?\n/).filter(l => l.trim() !== '')
 
+  // Skip header row if first column heading is "building" or "room"
   let startIndex = 0
-  if (lines.length > 0 && lines[0].toLowerCase().includes('asset')) {
+  if (lines.length > 0 && /^(building|room)/i.test(lines[0].trim())) {
     startIndex = 1
   }
 
   const seen = new Map<string, PreviewRoom>()
+  const invalid: string[] = []
+
   for (let i = startIndex; i < lines.length; i++) {
     const cols = lines[i].split(',')
-    if (cols.length < 12) continue
-    const buildingName = cols[10].trim()
-    const number = cols[11].trim()
+    if (cols.length < 2) continue
+    const buildingName = cols[0].trim()
+    const number = cols[1].trim()
     if (!buildingName || !number) continue
+
+    if (!ROOM_CODE_RE.test(number)) {
+      invalid.push(number)
+      continue
+    }
+
     const key = `${buildingName.toLowerCase()}|${number}`
     if (!seen.has(key)) {
       seen.set(key, { number, buildingName, buildingId: null })
     }
+  }
+
+  if (invalid.length > 0) {
+    fileError.value = `Invalid room code(s): ${invalid.join(', ')}. Codes must be 2 uppercase letters followed by numbers (e.g. LT101).`
+    return null
   }
 
   if (seen.size === 0) {
@@ -236,7 +252,7 @@ async function confirmImport() {
       <v-card title="Import Rooms from CSV">
         <v-card-text>
           <v-alert type="info" density="compact" variant="tonal" class="mb-4">
-            Rooms are matched to buildings by name. Import buildings first if any are missing.
+            Two columns: building name and room code. Room codes must be 2 uppercase letters followed by numbers (e.g. <strong>LT101</strong>, <strong>GH201</strong>). Import buildings first if any are missing.
           </v-alert>
 
           <v-file-input

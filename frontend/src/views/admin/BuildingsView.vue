@@ -83,16 +83,15 @@ const previewHeaders = [{ title: 'Building Name', key: 'name' }]
 function parseCsvBuildings(text: string): string[] | null {
   const lines = text.split(/\r?\n/).filter(l => l.trim() !== '')
 
+  // Skip header row if first column heading is "name" or "building"
   let startIndex = 0
-  if (lines.length > 0 && lines[0].toLowerCase().includes('asset')) {
+  if (lines.length > 0 && /^(name|building)/i.test(lines[0].trim())) {
     startIndex = 1
   }
 
   const seen = new Set<string>()
   for (let i = startIndex; i < lines.length; i++) {
-    const cols = lines[i].split(',')
-    if (cols.length < 12) continue
-    const name = cols[10].trim()
+    const name = lines[i].split(',')[0].trim()
     if (name) seen.add(name)
   }
 
