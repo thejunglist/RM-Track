@@ -1,0 +1,15 @@
+asset_tag,name,category,building,room
+AT001,Dell Projector 4K,AV Equipment,Livingstone Tower,LT101
+AT002,Epson Laser Projector,AV Equipment,Livingstone Tower,LT102
+AT003,Poly Studio Video Bar,Video Conferencing,Livingstone Tower,LT201
+AT004,Samsung 75" Display,Display,Livingstone Tower,LT202
+AT005,Dell Projector 4K,AV Equipment,Graham Hills,GH101
+AT006,Logitech Rally Camera,Video Conferencing,Graham Hills,GH102
+AT007,Epson Laser Projector,AV Equipment,Graham Hills,GH201
+AT008,Sony 65" Display,Display,Royal College,RC101
+AT009,Poly Studio Video Bar,Video Conferencing,Royal College,RC201
+AT010,Dell Projector 4K,AV Equipment,Royal College,RC301
+AT011,Epson Laser Projector,AV Equipment,McCance Building,MC101
+AT012,Logitech Rally Camera,Video Conferencing,McCance Building,MC201
+AT013,Samsung 75" Display,Display,James Weir Building,JW101
+AT014,Dell Projector 4K,AV Equipment,James Weir Building,JW201

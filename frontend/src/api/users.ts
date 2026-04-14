@@ -13,7 +13,6 @@ export async function getUsers(): Promise<User[]> {
 export async function createUser(input: {
   name: string
   email: string
-  password: string
   role?: string
 }): Promise<User> {
   const { data, error } = await supabase.functions.invoke('admin-create-user', { body: input })
