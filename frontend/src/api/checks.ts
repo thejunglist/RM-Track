@@ -30,7 +30,7 @@ export async function getChecks(): Promise<MonthlyCheck[]> {
     .order('year', { ascending: false })
     .order('month', { ascending: false })
   if (error) throw error
-  return data
+  return data as unknown as MonthlyCheck[]
 }
 
 export async function getCheck(id: number): Promise<MonthlyCheck> {
@@ -40,7 +40,7 @@ export async function getCheck(id: number): Promise<MonthlyCheck> {
     .eq('id', id)
     .single()
   if (error) throw error
-  return data
+  return data as unknown as MonthlyCheck
 }
 
 export async function createCheck(input: { roomId: number; month: number; year: number }): Promise<MonthlyCheck> {
@@ -53,7 +53,7 @@ export async function createCheck(input: { roomId: number; month: number; year: 
     .select(SELECT_LIST)
     .single()
   if (error) throw error
-  return data
+  return data as unknown as MonthlyCheck
 }
 
 export async function saveAnswers(
@@ -80,5 +80,5 @@ export async function completeCheck(id: number): Promise<MonthlyCheck> {
     .select(SELECT_LIST)
     .single()
   if (error) throw error
-  return data
+  return data as unknown as MonthlyCheck
 }

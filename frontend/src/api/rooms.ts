@@ -17,7 +17,7 @@ export async function getRooms(buildingId?: number): Promise<Room[]> {
   if (buildingId) query = query.eq('building_id', buildingId)
   const { data, error } = await query
   if (error) throw error
-  return data
+  return data as unknown as Room[]
 }
 
 export async function getRoom(id: number): Promise<Room> {
@@ -27,7 +27,7 @@ export async function getRoom(id: number): Promise<Room> {
     .eq('id', id)
     .single()
   if (error) throw error
-  return data
+  return data as unknown as Room
 }
 
 export async function createRoom(input: { buildingId: number; number: string; floor?: string; name?: string }): Promise<Room> {
@@ -38,10 +38,10 @@ export async function createRoom(input: { buildingId: number; number: string; fl
     .select(SELECT_LIST)
     .single()
   if (error) throw error
-  return data
+  return data as unknown as Room
 }
 
-export async function updateRoom(id: number, input: object): Promise<Room> {
+export async function updateRoom(id: number, input: Record<string, unknown>): Promise<Room> {
   const mapped = mapKeys(input)
   const { data, error } = await supabase
     .from('rooms')
@@ -50,7 +50,7 @@ export async function updateRoom(id: number, input: object): Promise<Room> {
     .select(SELECT_LIST)
     .single()
   if (error) throw error
-  return data
+  return data as unknown as Room
 }
 
 export async function deleteRoom(id: number): Promise<void> {

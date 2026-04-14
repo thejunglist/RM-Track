@@ -107,20 +107,20 @@ function parseCsv(text: string): PreviewRow[] | null {
 
   // Skip header row if first column heading is "asset" or "name"
   let startIndex = 0
-  if (lines.length > 0 && /^(asset|name)/i.test(lines[0].trim())) {
+  if (lines.length > 0 && /^(asset|name)/i.test(lines[0]!.trim())) {
     startIndex = 1
   }
 
   const rows: PreviewRow[] = []
   for (let i = startIndex; i < lines.length; i++) {
-    const cols = lines[i].split(',')
+    const cols = lines[i]!.split(',')
     if (cols.length < 5) continue
 
-    const assetTag = cols[0].trim()
-    const name = cols[1].trim()
-    const category = cols[2].trim()
-    const building = cols[3].trim()
-    const roomNumber = cols[4].trim()
+    const assetTag = cols[0]!.trim()
+    const name = cols[1]!.trim()
+    const category = cols[2]!.trim()
+    const building = cols[3]!.trim()
+    const roomNumber = cols[4]!.trim()
 
     if (!assetTag && !name) continue
 

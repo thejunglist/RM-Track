@@ -85,13 +85,13 @@ function parseCsvBuildings(text: string): string[] | null {
 
   // Skip header row if first column heading is "name" or "building"
   let startIndex = 0
-  if (lines.length > 0 && /^(name|building)/i.test(lines[0].trim())) {
+  if (lines.length > 0 && /^(name|building)/i.test(lines[0]!.trim())) {
     startIndex = 1
   }
 
   const seen = new Set<string>()
   for (let i = startIndex; i < lines.length; i++) {
-    const name = lines[i].split(',')[0].trim()
+    const name = lines[i]!.split(',')[0]!.trim()
     if (name) seen.add(name)
   }
 

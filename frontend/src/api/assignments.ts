@@ -13,7 +13,7 @@ export async function getAssignments(params?: { techId?: string; roomId?: number
   if (params?.roomId) query = query.eq('room_id', params.roomId)
   const { data, error } = await query
   if (error) throw error
-  return data
+  return data as unknown as RoomAssignment[]
 }
 
 export async function createAssignment(input: { techId: string; roomId: number }): Promise<RoomAssignment> {
@@ -23,7 +23,7 @@ export async function createAssignment(input: { techId: string; roomId: number }
     .select(SELECT)
     .single()
   if (error) throw error
-  return data
+  return data as unknown as RoomAssignment
 }
 
 export async function deleteAssignment(id: number): Promise<void> {

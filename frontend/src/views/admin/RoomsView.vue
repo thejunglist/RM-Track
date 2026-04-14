@@ -102,7 +102,7 @@ function parseCsvRooms(text: string): PreviewRoom[] | null {
 
   // Skip header row if first column heading is "building" or "room"
   let startIndex = 0
-  if (lines.length > 0 && /^(building|room)/i.test(lines[0].trim())) {
+  if (lines.length > 0 && /^(building|room)/i.test(lines[0]!.trim())) {
     startIndex = 1
   }
 
@@ -110,10 +110,10 @@ function parseCsvRooms(text: string): PreviewRoom[] | null {
   const invalid: string[] = []
 
   for (let i = startIndex; i < lines.length; i++) {
-    const cols = lines[i].split(',')
+    const cols = lines[i]!.split(',')
     if (cols.length < 2) continue
-    const buildingName = cols[0].trim()
-    const number = cols[1].trim()
+    const buildingName = cols[0]!.trim()
+    const number = cols[1]!.trim()
     if (!buildingName || !number) continue
 
     if (!ROOM_CODE_RE.test(number)) {
