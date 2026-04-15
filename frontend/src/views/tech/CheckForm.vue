@@ -106,8 +106,6 @@ async function finish() {
     <v-stepper v-else-if="!loading" v-model="step" :items="equipment.map(e => e.name)" flat>
       <template v-for="(eq, idx) in equipment" :key="eq.id" #[`item.${idx+1}`]>
         <v-card flat>
-          <v-card-subtitle class="mb-3">{{ eq.category }}</v-card-subtitle>
-
           <div v-for="q in eq.questions" :key="q.id" class="mb-4">
             <p class="text-subtitle-2 mb-2">{{ q.text }}</p>
 

@@ -13,7 +13,7 @@ const SELECT_DETAIL = `
     id, buildingId:building_id, number, floor, name, createdAt:created_at,
     building:buildings(id, name, location, createdAt:created_at),
     equipment(
-      id, roomId:room_id, name, category, assetTag:asset_tag, createdAt:created_at,
+      id, roomId:room_id, name, createdAt:created_at,
       questions(id, equipmentId:equipment_id, text, answerType:answer_type, order, createdAt:created_at)
     )
   ),
