@@ -1,17 +1,25 @@
 import { supabase } from '../lib/supabase'
 import type { Equipment } from '../types'
 
-const SELECT = 'id, roomId:room_id, name, category, assetTag:asset_tag, createdAt:created_at'
+const SELECT = 'id, roomId:room_id, name, make, model, serial, description, assetTag:asset_tag, createdAt:created_at'
 
 export async function getEquipment(roomId?: number): Promise<Equipment[]> {
   let query = supabase.from('equipment').select(SELECT).order('name')
   if (roomId) query = query.eq('room_id', roomId)
   const { data, error } = await query
   if (error) throw error
-  return data
+  return data as unknown as Equipment[]
 }
 
-export async function createEquipment(input: { roomId: number; name: string; category?: string; assetTag?: string }): Promise<Equipment> {
+export async function createEquipment(input: {
+  roomId: number
+  name: string
+  make?: string
+  model?: string
+  serial?: string
+  description?: string
+  assetTag?: string
+}): Promise<Equipment> {
   const { roomId, assetTag, ...rest } = input
   const { data, error } = await supabase
     .from('equipment')
@@ -19,7 +27,7 @@ export async function createEquipment(input: { roomId: number; name: string; cat
     .select(SELECT)
     .single()
   if (error) throw error
-  return data
+  return data as unknown as Equipment
 }
 
 export async function updateEquipment(id: number, input: Record<string, unknown>): Promise<Equipment> {
@@ -31,7 +39,7 @@ export async function updateEquipment(id: number, input: Record<string, unknown>
     .select(SELECT)
     .single()
   if (error) throw error
-  return data
+  return data as unknown as Equipment
 }
 
 export async function deleteEquipment(id: number): Promise<void> {
@@ -42,7 +50,10 @@ export async function deleteEquipment(id: number): Promise<void> {
 export interface BulkImportItem {
   roomId: number
   name: string
-  category?: string
+  make?: string
+  model?: string
+  serial?: string
+  description?: string
   assetTag?: string
 }
 

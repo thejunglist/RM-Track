@@ -32,7 +32,10 @@ export interface Equipment {
   id: number
   roomId: number
   name: string
-  category?: string
+  make?: string
+  model?: string
+  serial?: string
+  description?: string
   assetTag?: string
   questions?: Question[]
   createdAt: string

@@ -6,7 +6,7 @@ import type { BulkImportItem } from '../../api/equipment'
 import { getRooms } from '../../api/rooms'
 import type { Equipment, Room } from '../../types'
 
-// ── Existing state ────────────────────────────────────────────────────────────
+// ── State ─────────────────────────────────────────────────────────────────────
 const equipment = ref<Equipment[]>([])
 const rooms = ref<Room[]>([])
 const loading = ref(true)
@@ -14,11 +14,20 @@ const dialog = ref(false)
 const delDialog = ref(false)
 const saving = ref(false)
 const selected = ref<Equipment | null>(null)
-const form = ref({ roomId: 0, name: '', category: '' })
+const form = ref({
+  roomId: 0,
+  make: '',
+  model: '',
+  serial: '',
+  description: '',
+  assetTag: '',
+})
 
 const headers = [
-  { title: 'Name', key: 'name' },
-  { title: 'Category', key: 'category' },
+  { title: 'Asset Tag', key: 'assetTag' },
+  { title: 'Make', key: 'make' },
+  { title: 'Model', key: 'model' },
+  { title: 'Serial', key: 'serial' },
   { title: 'Room', key: 'roomId' },
   { title: 'Actions', key: 'actions', sortable: false, align: 'end' as const },
 ]
@@ -37,12 +46,19 @@ onMounted(load)
 
 function openCreate() {
   selected.value = null
-  form.value = { roomId: rooms.value[0]?.id ?? 0, name: '', category: '' }
+  form.value = { roomId: rooms.value[0]?.id ?? 0, make: '', model: '', serial: '', description: '', assetTag: '' }
   dialog.value = true
 }
 function openEdit(e: Equipment) {
   selected.value = e
-  form.value = { roomId: e.roomId, name: e.name, category: e.category ?? '' }
+  form.value = {
+    roomId: e.roomId,
+    make: e.make ?? '',
+    model: e.model ?? '',
+    serial: e.serial ?? '',
+    description: e.description ?? '',
+    assetTag: e.assetTag ?? '',
+  }
   dialog.value = true
 }
 function openDelete(e: Equipment) { selected.value = e; delDialog.value = true }
@@ -50,13 +66,23 @@ function openDelete(e: Equipment) { selected.value = e; delDialog.value = true }
 async function save() {
   saving.value = true
   try {
-    const data = { ...form.value, category: form.value.category || undefined }
+    const name = [form.value.make, form.value.model].filter(Boolean).join(' ') || 'Unknown'
+    const data = {
+      roomId: form.value.roomId,
+      name,
+      make: form.value.make || undefined,
+      model: form.value.model || undefined,
+      serial: form.value.serial || undefined,
+      description: form.value.description || undefined,
+      assetTag: form.value.assetTag || undefined,
+    }
     if (selected.value) await updateEquipment(selected.value.id, data)
     else await createEquipment(data)
     dialog.value = false
     await load()
   } finally { saving.value = false }
 }
+
 async function confirmDelete() {
   if (!selected.value) return
   await deleteEquipment(selected.value.id)
@@ -68,8 +94,10 @@ async function confirmDelete() {
 
 interface PreviewRow {
   assetTag: string
-  name: string
-  category: string
+  make: string
+  model: string
+  serial: string
+  description: string
   building: string
   roomNumber: string
   roomId: number | null
@@ -87,8 +115,9 @@ const skippedAlreadyExists = ref<PreviewRow[]>([])
 
 const previewHeaders = [
   { title: 'Asset Tag', key: 'assetTag' },
-  { title: 'Model', key: 'name' },
-  { title: 'Category', key: 'category' },
+  { title: 'Make', key: 'make' },
+  { title: 'Model', key: 'model' },
+  { title: 'Serial', key: 'serial' },
   { title: 'Building', key: 'building' },
   { title: 'Room', key: 'roomNumber' },
 ]
@@ -105,26 +134,28 @@ function buildRoomMap(): Map<string, number> {
 function parseCsv(text: string): PreviewRow[] | null {
   const lines = text.split(/\r?\n/).filter(l => l.trim() !== '')
 
-  // Skip header row if first column heading is "asset" or "name"
+  // Skip header row if first column heading is "asset" or "make"
   let startIndex = 0
-  if (lines.length > 0 && /^(asset|name)/i.test(lines[0]!.trim())) {
+  if (lines.length > 0 && /^(asset|make)/i.test(lines[0]!.trim())) {
     startIndex = 1
   }
 
   const rows: PreviewRow[] = []
   for (let i = startIndex; i < lines.length; i++) {
     const cols = lines[i]!.split(',')
-    if (cols.length < 5) continue
+    if (cols.length < 7) continue
 
-    const assetTag = cols[0]!.trim()
-    const name = cols[1]!.trim()
-    const category = cols[2]!.trim()
-    const building = cols[3]!.trim()
-    const roomNumber = cols[4]!.trim()
+    const assetTag    = cols[0]!.trim()
+    const make        = cols[1]!.trim()
+    const model       = cols[2]!.trim()
+    const serial      = cols[3]!.trim()
+    const building    = cols[4]!.trim()
+    const roomNumber  = cols[5]!.trim()
+    const description = cols[6]!.trim()
 
-    if (!assetTag && !name) continue
+    if (!assetTag && !make && !model) continue
 
-    rows.push({ assetTag, name, category, building, roomNumber, roomId: null })
+    rows.push({ assetTag, make, model, serial, description, building, roomNumber, roomId: null })
   }
 
   if (rows.length === 0) {
@@ -185,8 +216,11 @@ async function confirmImport() {
   try {
     const items: BulkImportItem[] = previewToImport.value.map(row => ({
       roomId: row.roomId!,
-      name: row.name,
-      category: row.category || undefined,
+      name: [row.make, row.model].filter(Boolean).join(' ') || 'Unknown',
+      make: row.make || undefined,
+      model: row.model || undefined,
+      serial: row.serial || undefined,
+      description: row.description || undefined,
       assetTag: row.assetTag || undefined,
     }))
     const result = await bulkImportEquipment(items)
@@ -220,12 +254,20 @@ async function confirmImport() {
     </v-data-table>
 
     <!-- Add/Edit dialog -->
-    <v-dialog v-model="dialog" max-width="480">
+    <v-dialog v-model="dialog" max-width="520">
       <v-card :title="selected ? 'Edit Equipment' : 'Add Equipment'">
         <v-card-text class="d-flex flex-column gap-2">
-          <v-select v-model="form.roomId" :items="rooms.map(r => ({ title: `${r.number}${r.name ? ' — '+r.name : ''}`, value: r.id }))" item-title="title" item-value="value" label="Room" required />
-          <v-text-field v-model="form.name" label="Equipment Name" required />
-          <v-text-field v-model="form.category" label="Category (optional)" />
+          <v-select
+            v-model="form.roomId"
+            :items="rooms.map(r => ({ title: `${r.number}${r.name ? ' — '+r.name : ''}`, value: r.id }))"
+            item-title="title" item-value="value"
+            label="Room" required
+          />
+          <v-text-field v-model="form.assetTag" label="Asset Tag" />
+          <v-text-field v-model="form.make" label="Make" required />
+          <v-text-field v-model="form.model" label="Model" required />
+          <v-text-field v-model="form.serial" label="Serial Number" />
+          <v-text-field v-model="form.description" label="Description" />
         </v-card-text>
         <v-card-actions>
           <v-spacer />
@@ -238,7 +280,7 @@ async function confirmImport() {
     <!-- Delete dialog -->
     <v-dialog v-model="delDialog" max-width="400">
       <v-card title="Delete Equipment">
-        <v-card-text>Delete <strong>{{ selected?.name }}</strong>? All associated questions will be removed.</v-card-text>
+        <v-card-text>Delete <strong>{{ selected?.make }} {{ selected?.model }}</strong>? All associated questions will be removed.</v-card-text>
         <v-card-actions>
           <v-spacer />
           <v-btn @click="delDialog = false">Cancel</v-btn>
@@ -251,6 +293,10 @@ async function confirmImport() {
     <v-dialog v-model="csvDialog" max-width="900" scrollable>
       <v-card title="Import Equipment from CSV">
         <v-card-text>
+          <v-alert type="info" density="compact" variant="tonal" class="mb-4">
+            7 columns: <strong>asset_tag, make, model, serial, building, room, description</strong>
+          </v-alert>
+
           <v-file-input
             label="Select CSV file"
             accept=".csv,text/csv"
@@ -286,7 +332,7 @@ async function confirmImport() {
             </div>
 
             <div v-if="skippedAlreadyExists.length > 0">
-              <div class="text-subtitle-2 mb-1 text-info">Skipped — asset tag already in database</div>
+              <div class="text-subtitle-2 mb-1 text-info">Skipped — already exists</div>
               <v-data-table :headers="previewHeaders" :items="skippedAlreadyExists" density="compact" :items-per-page="5" />
             </div>
           </template>

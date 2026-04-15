@@ -1,0 +1,16 @@
+asset_tag,make,model,serial,building,room,description
+AT001,Dell,Projector 4K,SN-001-X,Livingstone Tower,LT101,Ceiling-mounted projector
+AT002,Epson,EB-2250U,SN-002-Y,Livingstone Tower,LT101,Wall-mounted projector
+AT003,Polycom,Studio X50,SN-003-Z,Livingstone Tower,LT205,Video conferencing unit
+AT004,Samsung,65in Smart TV,SN-004-A,Curran Building,CU101,Display screen front of room
+AT005,Logitech,Rally Camera,SN-005-B,Curran Building,CU101,Lecture capture camera
+AT006,Dell,Projector 4K,SN-006-C,Curran Building,CU205,Ceiling-mounted projector
+AT007,Sony,VPL-FHZ75,SN-007-D,Graham Hills Building,GH101,Laser projector
+AT008,Epson,EB-L615U,SN-008-E,Graham Hills Building,GH101,Backup projector
+AT009,Polycom,Studio X70,SN-009-F,Graham Hills Building,GH302,Video conferencing unit
+AT010,Crestron,DM-MD8X8,SN-010-G,Graham Hills Building,GH302,AV matrix switcher
+AT011,Dell,Projector 4K,SN-011-H,James Weir Building,JW101,Ceiling-mounted projector
+AT012,Samsung,75in Smart TV,SN-012-I,James Weir Building,JW205,Display screen
+AT013,Logitech,MeetUp,SN-013-J,John Anderson Building,JA101,Conference camera
+AT014,Epson,EB-2250U,SN-014-K,John Anderson Building,JA101,Projector
+AT015,Barco,ClickShare CS-100,SN-015-L,John Anderson Building,JA205,Wireless presentation
