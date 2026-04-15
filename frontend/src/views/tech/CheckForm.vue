@@ -2,8 +2,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppLayout from '../../components/AppLayout.vue'
-import { getCheck, saveAnswers, completeCheck } from '../../api/checks'
-import type { MonthlyCheck, Equipment } from '../../types'
+import { getCheck, startCheck, saveAnswers, completeCheck } from '../../api/checks'
+import type { MonthlyCheck, CheckItem } from '../../types'
 
 const route = useRoute()
 const router = useRouter()
@@ -12,72 +12,69 @@ const check = ref<MonthlyCheck | null>(null)
 const loading = ref(true)
 const saving = ref(false)
 const error = ref('')
-const step = ref(1)
 
 interface AnswerEntry { value: string; notes: string }
 const answers = ref<Record<number, AnswerEntry>>({})
 
-function getAnswer(questionId: number): AnswerEntry {
-  if (!answers.value[questionId]) {
-    answers.value[questionId] = { value: '', notes: '' }
+function getAnswer(checkItemId: number): AnswerEntry {
+  if (!answers.value[checkItemId]) {
+    answers.value[checkItemId] = { value: '', notes: '' }
   }
-  return answers.value[questionId]
+  return answers.value[checkItemId]!
 }
+
+// Sorted check items for this room
+const checkItems = computed<CheckItem[]>(() => {
+  const roomItems = check.value?.room?.checkItems ?? []
+  return roomItems
+    .map(rci => rci.checkItem)
+    .filter((ci): ci is CheckItem => ci !== undefined)
+    .sort((a, b) => a.order - b.order)
+})
+
+const isCompleted = computed(() => check.value?.status === 'COMPLETED')
 
 onMounted(async () => {
   try {
     const data = await getCheck(Number(route.params.id))
     check.value = data
+
+    // Pre-fill saved answers
     for (const ans of data.answers ?? []) {
-      answers.value[ans.questionId] = { value: ans.value, notes: ans.notes ?? '' }
+      answers.value[ans.checkItemId] = { value: ans.value, notes: ans.notes ?? '' }
     }
-    for (const eq of data.room?.equipment ?? []) {
-      for (const q of eq.questions ?? []) {
-        if (!answers.value[q.id]) {
-          answers.value[q.id] = { value: q.answerType === 'YES_NO' ? 'true' : '', notes: '' }
-        }
+
+    // Default unfilled items
+    for (const item of checkItems.value) {
+      if (!answers.value[item.id]) {
+        answers.value[item.id] = { value: item.answerType === 'YES_NO' ? 'true' : '', notes: '' }
       }
     }
+
+    // Mark as in-progress if still pending
+    if (data.status === 'PENDING') {
+      await startCheck(data.id)
+    }
   } catch {
-    error.value = 'Failed to load check'
+    error.value = 'Failed to load check.'
   } finally {
     loading.value = false
   }
 })
 
-const equipment = computed(() => check.value?.room?.equipment ?? [])
-const isCompleted = computed(() => check.value?.status === 'COMPLETED')
-
-async function saveStep(eq: Equipment) {
-  saving.value = true
-  const payload = (eq.questions ?? []).map(q => ({
-    questionId: q.id,
-    value: getAnswer(q.id).value,
-    notes: getAnswer(q.id).notes || undefined,
-  }))
-  try {
-    await saveAnswers(check.value!.id, payload)
-  } catch {
-    error.value = 'Failed to save answers'
-  } finally {
-    saving.value = false
-  }
-}
-
-async function nextStep(eq: Equipment) {
-  await saveStep(eq)
-  step.value++
-}
-
 async function finish() {
   saving.value = true
   try {
-    const lastEq = equipment.value[step.value - 1]
-    if (lastEq) await saveStep(lastEq)
+    const payload = checkItems.value.map(item => ({
+      checkItemId: item.id,
+      value: getAnswer(item.id).value,
+      notes: getAnswer(item.id).notes || undefined,
+    }))
+    await saveAnswers(check.value!.id, payload)
     await completeCheck(check.value!.id)
     router.push('/tech/dashboard')
   } catch {
-    error.value = 'Failed to complete check'
+    error.value = 'Failed to complete check.'
   } finally {
     saving.value = false
   }
@@ -88,13 +85,15 @@ async function finish() {
   <AppLayout>
     <div class="d-flex align-center mb-4">
       <v-btn icon="mdi-arrow-left" variant="text" @click="router.push('/tech/dashboard')" />
-      <h2 class="text-h5 ml-2">
-        {{ check?.room?.number }} — {{ check?.room?.name }}
-        <v-chip class="ml-2" :color="check?.status === 'COMPLETED' ? 'success' : 'info'" size="small">
-          {{ check?.status }}
-        </v-chip>
-      </h2>
+      <div class="ml-2">
+        <h2 class="text-h5 d-inline">{{ check?.room?.number }}<span v-if="check?.room?.name"> — {{ check.room.name }}</span></h2>
+        <v-chip class="ml-2" :color="isCompleted ? 'success' : 'info'" size="small">{{ check?.status }}</v-chip>
+      </div>
     </div>
+
+    <p v-if="check?.room?.building" class="text-body-2 text-medium-emphasis mb-4">
+      {{ check.room.building.name }}
+    </p>
 
     <v-alert v-if="error" type="error" class="mb-4">{{ error }}</v-alert>
     <v-progress-circular v-if="loading" indeterminate class="d-block mx-auto" />
@@ -103,16 +102,20 @@ async function finish() {
       This check has been completed and is locked.
     </v-alert>
 
-    <v-stepper v-else-if="!loading" v-model="step" :items="equipment.map(e => e.name)" flat>
-      <template v-for="(eq, idx) in equipment" :key="eq.id" #[`item.${idx+1}`]>
-        <v-card flat>
-          <div v-for="q in eq.questions" :key="q.id" class="mb-4">
-            <p class="text-subtitle-2 mb-2">{{ q.text }}</p>
+    <template v-if="!loading">
+      <v-alert v-if="checkItems.length === 0" type="warning" variant="tonal">
+        No check items have been configured for this room. An admin needs to set up the checklist in <strong>Room Checklist</strong>.
+      </v-alert>
+
+      <v-card v-else flat>
+        <v-card-text>
+          <div v-for="item in checkItems" :key="item.id" class="mb-5">
+            <p class="text-subtitle-1 font-weight-medium mb-2">{{ item.name }}</p>
 
             <v-btn-toggle
-              v-if="q.answerType === 'YES_NO'"
-              :model-value="getAnswer(q.id).value"
-              @update:model-value="(v: string) => getAnswer(q.id).value = v"
+              v-if="item.answerType === 'YES_NO'"
+              :model-value="getAnswer(item.id).value"
+              @update:model-value="(v: string) => getAnswer(item.id).value = v"
               mandatory
               color="primary"
               :disabled="isCompleted"
@@ -122,51 +125,48 @@ async function finish() {
             </v-btn-toggle>
 
             <v-text-field
-              v-else-if="q.answerType === 'NUMERIC'"
-              :model-value="getAnswer(q.id).value"
-              @update:model-value="(v: string) => getAnswer(q.id).value = v"
+              v-else-if="item.answerType === 'NUMERIC'"
+              :model-value="getAnswer(item.id).value"
+              @update:model-value="(v: string) => getAnswer(item.id).value = v"
               type="number"
               :disabled="isCompleted"
               density="compact"
-              style="max-width:200px"
+              style="max-width: 200px"
+              hide-details
             />
 
             <v-textarea
               v-else
-              :model-value="getAnswer(q.id).value"
-              @update:model-value="(v: string) => getAnswer(q.id).value = v"
+              :model-value="getAnswer(item.id).value"
+              @update:model-value="(v: string) => getAnswer(item.id).value = v"
               :disabled="isCompleted"
               rows="2"
               auto-grow
               density="compact"
+              hide-details
             />
 
             <v-text-field
-              :model-value="getAnswer(q.id).notes"
-              @update:model-value="(v: string) => getAnswer(q.id).notes = v"
+              :model-value="getAnswer(item.id).notes"
+              @update:model-value="(v: string) => getAnswer(item.id).notes = v"
               label="Notes (optional)"
               density="compact"
               class="mt-2"
               :disabled="isCompleted"
+              hide-details
             />
-          </div>
 
-          <div class="d-flex gap-3 mt-4">
-            <v-btn v-if="idx > 0" variant="outlined" @click="step--">Back</v-btn>
-            <v-btn
-              v-if="idx < equipment.length - 1"
-              color="primary"
-              :loading="saving"
-              @click="nextStep(eq)"
-            >
-              Save &amp; Next
-            </v-btn>
-            <v-btn v-else color="success" :loading="saving" @click="finish">
-              Complete Check
-            </v-btn>
+            <v-divider class="mt-4" />
           </div>
-        </v-card>
-      </template>
-    </v-stepper>
+        </v-card-text>
+
+        <v-card-actions v-if="!isCompleted" class="px-4 pb-4">
+          <v-spacer />
+          <v-btn color="success" size="large" :loading="saving" prepend-icon="mdi-check-circle" @click="finish">
+            Complete Check
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </template>
   </AppLayout>
 </template>

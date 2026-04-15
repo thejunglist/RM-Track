@@ -12,14 +12,14 @@ const SELECT_DETAIL = `
   room:rooms(
     id, buildingId:building_id, number, floor, name, createdAt:created_at,
     building:buildings(id, name, location, createdAt:created_at),
-    equipment(
-      id, roomId:room_id, name, createdAt:created_at,
-      questions(id, equipmentId:equipment_id, text, answerType:answer_type, order, createdAt:created_at)
+    checkItems:room_check_items(
+      id, checkItemId:check_item_id,
+      checkItem:check_items(id, name, answerType:answer_type, order, createdAt:created_at)
     )
   ),
   tech:profiles(id, name),
   answers:check_answers(
-    id, checkId:check_id, questionId:question_id, value, notes, createdAt:created_at
+    id, checkId:check_id, checkItemId:check_item_id, value, notes, createdAt:created_at
   )
 `.trim()
 
@@ -56,19 +56,28 @@ export async function createCheck(input: { roomId: number; month: number; year: 
   return data as unknown as MonthlyCheck
 }
 
+export async function startCheck(id: number): Promise<void> {
+  const { error } = await supabase
+    .from('monthly_checks')
+    .update({ status: 'IN_PROGRESS' })
+    .eq('id', id)
+    .eq('status', 'PENDING')
+  if (error) throw error
+}
+
 export async function saveAnswers(
   checkId: number,
-  answers: { questionId: number; value: string; notes?: string }[],
+  answers: { checkItemId: number; value: string; notes?: string }[],
 ): Promise<void> {
   const rows = answers.map((a) => ({
     check_id: checkId,
-    question_id: a.questionId,
+    check_item_id: a.checkItemId,
     value: a.value,
     notes: a.notes ?? null,
   }))
   const { error } = await supabase
     .from('check_answers')
-    .upsert(rows, { onConflict: 'check_id,question_id' })
+    .upsert(rows, { onConflict: 'check_id,check_item_id' })
   if (error) throw error
 }
 

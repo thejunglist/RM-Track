@@ -6,9 +6,9 @@ const SELECT_LIST = 'id, buildingId:building_id, number, floor, name, createdAt:
 const SELECT_DETAIL = `
   id, buildingId:building_id, number, floor, name, createdAt:created_at,
   building:buildings(id, name, location, createdAt:created_at),
-  equipment(
-    id, roomId:room_id, name, category, assetTag:asset_tag, createdAt:created_at,
-    questions(id, equipmentId:equipment_id, text, answerType:answer_type, order, createdAt:created_at)
+  checkItems:room_check_items(
+    id, checkItemId:check_item_id,
+    checkItem:check_items(id, name, answerType:answer_type, order, createdAt:created_at)
   )
 `.trim()
 

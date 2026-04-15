@@ -24,15 +24,23 @@ export interface Room {
   number: string
   floor?: string
   name?: string
-  equipment?: Equipment[]
+  checkItems?: RoomCheckItem[]
   createdAt: string
 }
 
-export interface Equipment {
+export interface CheckItem {
+  id: number
+  name: string
+  answerType: AnswerType
+  order: number
+  createdAt: string
+}
+
+export interface RoomCheckItem {
   id: number
   roomId: number
-  name: string
-  questions?: Question[]
+  checkItemId: number
+  checkItem?: CheckItem
   createdAt: string
 }
 
@@ -62,8 +70,8 @@ export interface MonthlyCheck {
 export interface CheckAnswer {
   id: number
   checkId: number
-  questionId: number
-  question?: Question
+  checkItemId: number
+  checkItem?: CheckItem
   value: string
   notes?: string
   createdAt: string
