@@ -41,6 +41,18 @@ export async function deleteEquipment(id: number): Promise<void> {
   if (error) throw error
 }
 
+export async function bulkImportEquipment(
+  items: { roomId: number; name: string }[]
+): Promise<{ imported: number; skipped: number }> {
+  const rows = items.map(({ roomId, name }) => ({ room_id: roomId, name }))
+  const { data, error } = await supabase
+    .from('equipment')
+    .insert(rows)
+    .select('id')
+  if (error) throw error
+  return { imported: data?.length ?? 0, skipped: items.length - (data?.length ?? 0) }
+}
+
 function mapKeys(input: Record<string, unknown>): Record<string, unknown> {
   const map: Record<string, string> = { roomId: 'room_id' }
   return Object.fromEntries(
