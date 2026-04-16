@@ -6,6 +6,7 @@ const router = createRouter({
   routes: [
     { path: '/', redirect: '/login' },
     { path: '/login', component: () => import('../views/LoginView.vue'), meta: { public: true } },
+    { path: '/update-password', component: () => import('../views/UpdatePasswordView.vue'), meta: { public: true } },
 
     // Tech routes
     { path: '/tech/dashboard', component: () => import('../views/tech/TechDashboard.vue'), meta: { role: 'TECH' } },
@@ -25,6 +26,12 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
+
+  // Detect invite/password-reset link before Supabase clears the URL hash
+  if (window.location.hash.includes('type=invite') || window.location.hash.includes('type=recovery')) {
+    if (to.path !== '/update-password') return '/update-password'
+    return true
+  }
 
   if (!auth.initialized) {
     await auth.init()
