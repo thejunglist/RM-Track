@@ -95,7 +95,7 @@ function buildBuildingMap(): Map<string, number> {
   return map
 }
 
-const ROOM_CODE_RE = /^[A-Z]{2}\d+[A-Za-z]*$/
+const ROOM_CODE_RE = /^[A-Z]{2}[\dA-Za-z]+$/
 
 function parseCsvRooms(text: string): PreviewRoom[] | null {
   const lines = text.split(/\r?\n/).filter(l => l.trim() !== '')
