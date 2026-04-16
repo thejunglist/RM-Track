@@ -34,7 +34,7 @@ export const useAuthStore = defineStore('auth', () => {
       .from('profiles')
       .select('id, name, email, role, createdAt:created_at')
       .eq('id', userId)
-      .single()
+      .maybeSingle()
     if (profile) {
       user.value = {
         id: profile.id,
@@ -43,6 +43,11 @@ export const useAuthStore = defineStore('auth', () => {
         role: profile.role,
         createdAt: profile.createdAt,
       }
+    } else {
+      // No profile row — user was created outside the app (e.g. Supabase dashboard).
+      // Sign them out so they see the login page rather than a blank/broken state.
+      await supabase.auth.signOut()
+      user.value = null
     }
   }
 

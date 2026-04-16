@@ -29,6 +29,7 @@ export async function createUser(input: {
   name: string
   email: string
   role?: string
+  password?: string
 }): Promise<User> {
   return invokeOrThrow('admin-create-user', input) as Promise<User>
 }

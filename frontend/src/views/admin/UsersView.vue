@@ -51,7 +51,12 @@ async function save() {
       if (form.value.password) data.password = form.value.password
       await updateUser(selected.value.id, data)
     } else {
-      await createUser({ name: form.value.name, email: form.value.email, role: form.value.role })
+      await createUser({
+        name: form.value.name,
+        email: form.value.email,
+        role: form.value.role,
+        password: form.value.password || undefined,
+      })
     }
     dialog.value = false
     await load()
@@ -91,31 +96,29 @@ function formatDate(d: string) {
       </template>
     </v-data-table>
 
-    <!-- Create dialog — no password field, invite email is sent instead -->
     <v-dialog v-model="dialog" max-width="480">
       <v-card :title="selected ? 'Edit User' : 'Add User'">
         <v-card-text class="d-flex flex-column gap-2">
-          <v-alert v-if="!selected" type="info" density="compact" variant="tonal">
-            An invite email will be sent so the user can set their own password.
-          </v-alert>
           <v-alert v-if="saveError" type="error" density="compact">{{ saveError }}</v-alert>
           <v-text-field v-model="form.name" label="Full Name" required />
           <v-text-field v-model="form.email" label="Email" type="email" required />
           <v-text-field
-            v-if="selected"
             v-model="form.password"
-            label="New Password (leave blank to keep current)"
+            :label="selected ? 'New Password (leave blank to keep current)' : 'Password (leave blank to send invite email)'"
             :type="showPassword ? 'text' : 'password'"
             :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
             @click:append-inner="showPassword = !showPassword"
           />
+          <v-alert v-if="!selected && !form.password" type="info" density="compact" variant="tonal">
+            No password set — an invite email will be sent so the user can set their own password.
+          </v-alert>
           <v-select v-model="form.role" :items="roles" label="Role" required />
         </v-card-text>
         <v-card-actions>
           <v-spacer />
           <v-btn @click="dialog = false">Cancel</v-btn>
           <v-btn color="primary" :loading="saving" @click="save">
-            {{ selected ? 'Save' : 'Send Invite' }}
+            {{ selected ? 'Save' : (form.password ? 'Create User' : 'Send Invite') }}
           </v-btn>
         </v-card-actions>
       </v-card>

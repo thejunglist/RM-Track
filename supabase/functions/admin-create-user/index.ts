@@ -43,15 +43,35 @@ Deno.serve(async (req) => {
     })
   }
 
-  const { name, email, role = 'TECH' } = await req.json()
+  const { name, email, role = 'TECH', password } = await req.json()
 
-  // Send invite email — user sets their own password via the link
-  const { data: { user }, error: inviteError } = await serviceClient.auth.admin.inviteUserByEmail(email, {
-    data: { name },
-  })
+  let authUser: { id: string } | null = null
+  let createError: { message: string } | null = null
+
+  if (password) {
+    // Create user with a set password — no invite email sent
+    const { data, error } = await serviceClient.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { name },
+    })
+    authUser = data.user
+    createError = error
+  } else {
+    // Send invite email — user sets their own password via the link
+    const { data, error } = await serviceClient.auth.admin.inviteUserByEmail(email, {
+      data: { name },
+    })
+    authUser = data.user
+    createError = error
+  }
+
+  const user = authUser
+  const inviteError = createError
 
   if (inviteError || !user) {
-    return new Response(JSON.stringify({ error: inviteError?.message ?? 'Failed to invite user' }), {
+    return new Response(JSON.stringify({ error: inviteError?.message ?? 'Failed to create user' }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
