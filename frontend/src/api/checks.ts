@@ -57,12 +57,12 @@ export async function createCheck(input: { roomId: number; month: number; year: 
 }
 
 export async function startCheck(id: number): Promise<void> {
-  const { error } = await supabase
+  // Best-effort — ignore RLS errors (check may belong to another tech)
+  await supabase
     .from('monthly_checks')
     .update({ status: 'IN_PROGRESS' })
     .eq('id', id)
     .eq('status', 'PENDING')
-  if (error) throw error
 }
 
 export async function saveAnswers(
