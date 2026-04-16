@@ -11,6 +11,7 @@ const router = useRouter()
 const check = ref<MonthlyCheck | null>(null)
 const loading = ref(true)
 const saving = ref(false)
+const saved = ref(false)
 const error = ref('')
 
 interface AnswerEntry { value: string; notes: string }
@@ -32,7 +33,7 @@ const checkItems = computed<CheckItem[]>(() => {
     .sort((a, b) => a.order - b.order)
 })
 
-const isCompleted = computed(() => check.value?.status === 'COMPLETED')
+const wasCompleted = computed(() => check.value?.status === 'COMPLETED')
 
 onMounted(async () => {
   try {
@@ -74,6 +75,7 @@ async function finish() {
     return
   }
 
+  error.value = ''
   saving.value = true
   try {
     const payload = checkItems.value.map(item => ({
@@ -83,9 +85,11 @@ async function finish() {
     }))
     await saveAnswers(check.value!.id, payload)
     await completeCheck(check.value!.id)
-    router.push('/tech/dashboard')
+    saved.value = true
+    // Brief confirmation then go back to dashboard
+    setTimeout(() => router.push('/tech/dashboard'), 1200)
   } catch {
-    error.value = 'Failed to complete check.'
+    error.value = 'Failed to save check.'
   } finally {
     saving.value = false
   }
@@ -98,7 +102,7 @@ async function finish() {
       <v-btn icon="mdi-arrow-left" variant="text" @click="router.push('/tech/dashboard')" />
       <div class="ml-2">
         <h2 class="text-h5 d-inline">{{ check?.room?.number }}<span v-if="check?.room?.name"> — {{ check.room.name }}</span></h2>
-        <v-chip class="ml-2" :color="isCompleted ? 'success' : 'info'" size="small">{{ check?.status }}</v-chip>
+        <v-chip class="ml-2" :color="wasCompleted ? 'success' : 'info'" size="small">{{ check?.status }}</v-chip>
       </div>
     </div>
 
@@ -107,11 +111,8 @@ async function finish() {
     </p>
 
     <v-alert v-if="error" type="error" class="mb-4">{{ error }}</v-alert>
+    <v-alert v-if="saved" type="success" class="mb-4">Check saved!</v-alert>
     <v-progress-circular v-if="loading" indeterminate class="d-block mx-auto" />
-
-    <v-alert v-if="isCompleted && !loading" type="success" class="mb-4">
-      This check has been completed and is locked.
-    </v-alert>
 
     <template v-if="!loading">
       <v-alert v-if="checkItems.length === 0" type="warning" variant="tonal">
@@ -132,7 +133,6 @@ async function finish() {
               @update:model-value="(v: string) => getAnswer(item.id).value = v"
               mandatory
               color="primary"
-              :disabled="isCompleted"
             >
               <v-btn value="true">Yes</v-btn>
               <v-btn value="false">No</v-btn>
@@ -143,7 +143,6 @@ async function finish() {
               :model-value="getAnswer(item.id).value"
               @update:model-value="(v: string) => getAnswer(item.id).value = v"
               type="number"
-              :disabled="isCompleted"
               density="compact"
               style="max-width: 200px"
               hide-details
@@ -153,7 +152,6 @@ async function finish() {
               v-else
               :model-value="getAnswer(item.id).value"
               @update:model-value="(v: string) => getAnswer(item.id).value = v"
-              :disabled="isCompleted"
               rows="2"
               auto-grow
               density="compact"
@@ -166,7 +164,6 @@ async function finish() {
               label="Notes (optional)"
               density="compact"
               class="mt-2"
-              :disabled="isCompleted"
               hide-details
             />
 
@@ -174,10 +171,16 @@ async function finish() {
           </div>
         </v-card-text>
 
-        <v-card-actions v-if="!isCompleted" class="px-4 pb-4">
+        <v-card-actions class="px-4 pb-4">
           <v-spacer />
-          <v-btn color="success" size="large" :loading="saving" prepend-icon="mdi-check-circle" @click="finish">
-            Complete Check
+          <v-btn
+            color="success"
+            size="large"
+            :loading="saving"
+            :prepend-icon="wasCompleted ? 'mdi-content-save' : 'mdi-check-circle'"
+            @click="finish"
+          >
+            {{ wasCompleted ? 'Save Changes' : 'Complete Check' }}
           </v-btn>
         </v-card-actions>
       </v-card>

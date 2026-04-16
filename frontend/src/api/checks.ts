@@ -3,7 +3,8 @@ import type { MonthlyCheck } from '../types'
 
 const SELECT_LIST = `
   id, roomId:room_id, techId:tech_id, month, year, status,
-  completedAt:completed_at, createdAt:created_at
+  completedAt:completed_at, createdAt:created_at,
+  room:rooms(id, number, name, building:buildings(id, name))
 `.trim()
 
 const SELECT_DETAIL = `
