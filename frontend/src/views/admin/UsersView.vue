@@ -9,6 +9,7 @@ const loading = ref(true)
 const dialog = ref(false)
 const delDialog = ref(false)
 const saving = ref(false)
+const saveError = ref('')
 const selected = ref<User | null>(null)
 const form = ref({ name: '', email: '', password: '', role: 'TECH' })
 const showPassword = ref(false)
@@ -43,6 +44,7 @@ function openDelete(u: User) { selected.value = u; delDialog.value = true }
 
 async function save() {
   saving.value = true
+  saveError.value = ''
   try {
     if (selected.value) {
       const data: Record<string, string> = { name: form.value.name, email: form.value.email, role: form.value.role }
@@ -53,6 +55,8 @@ async function save() {
     }
     dialog.value = false
     await load()
+  } catch (e: unknown) {
+    saveError.value = e instanceof Error ? e.message : 'An unknown error occurred'
   } finally { saving.value = false }
 }
 
@@ -94,6 +98,7 @@ function formatDate(d: string) {
           <v-alert v-if="!selected" type="info" density="compact" variant="tonal">
             An invite email will be sent so the user can set their own password.
           </v-alert>
+          <v-alert v-if="saveError" type="error" density="compact">{{ saveError }}</v-alert>
           <v-text-field v-model="form.name" label="Full Name" required />
           <v-text-field v-model="form.email" label="Email" type="email" required />
           <v-text-field
