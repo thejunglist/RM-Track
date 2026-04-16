@@ -10,12 +10,13 @@ const dialog = ref(false)
 const delDialog = ref(false)
 const saving = ref(false)
 const selected = ref<CheckItem | null>(null)
-const form = ref({ name: '', answerType: 'YES_NO', order: 0 })
+const form = ref({ name: '', answerType: 'YES_NO', order: 0, isRequired: false })
 
 const headers = [
   { title: 'Order', key: 'order', width: '80px' },
   { title: 'Name', key: 'name' },
   { title: 'Answer Type', key: 'answerType' },
+  { title: 'Required', key: 'isRequired', width: '100px' },
   { title: 'Actions', key: 'actions', sortable: false, align: 'end' as const },
 ]
 
@@ -41,13 +42,13 @@ onMounted(load)
 function openCreate() {
   selected.value = null
   const nextOrder = items.value.length > 0 ? Math.max(...items.value.map(i => i.order)) + 1 : 1
-  form.value = { name: '', answerType: 'YES_NO', order: nextOrder }
+  form.value = { name: '', answerType: 'YES_NO', order: nextOrder, isRequired: false }
   dialog.value = true
 }
 
 function openEdit(item: CheckItem) {
   selected.value = item
-  form.value = { name: item.name, answerType: item.answerType, order: item.order }
+  form.value = { name: item.name, answerType: item.answerType, order: item.order, isRequired: item.isRequired }
   dialog.value = true
 }
 
@@ -90,6 +91,10 @@ async function confirmDelete() {
       <template #item.answerType="{ item }">
         <v-chip :color="typeColor[item.answerType]" size="small">{{ item.answerType }}</v-chip>
       </template>
+      <template #item.isRequired="{ item }">
+        <v-icon v-if="item.isRequired" color="error" size="small">mdi-asterisk</v-icon>
+        <span v-else class="text-medium-emphasis">—</span>
+      </template>
       <template #item.actions="{ item }">
         <v-btn icon="mdi-pencil" size="small" variant="text" @click="openEdit(item)" />
         <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click="openDelete(item)" />
@@ -103,6 +108,7 @@ async function confirmDelete() {
           <v-text-field v-model="form.name" label="Name" required />
           <v-select v-model="form.answerType" :items="answerTypes" item-title="title" item-value="value" label="Answer Type" />
           <v-text-field v-model.number="form.order" label="Order" type="number" hint="Lower numbers appear first" />
+          <v-switch v-model="form.isRequired" color="error" label="Required — tech must fill this in before completing the check" density="compact" hide-details />
         </v-card-text>
         <v-card-actions>
           <v-spacer />

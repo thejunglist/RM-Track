@@ -14,7 +14,7 @@ const SELECT_DETAIL = `
     building:buildings(id, name, location, createdAt:created_at),
     checkItems:room_check_items(
       id, checkItemId:check_item_id,
-      checkItem:check_items(id, name, answerType:answer_type, order, createdAt:created_at)
+      checkItem:check_items(id, name, answerType:answer_type, order, isRequired:is_required, createdAt:created_at)
     )
   ),
   tech:profiles(id, name),

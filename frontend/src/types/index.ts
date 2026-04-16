@@ -33,6 +33,7 @@ export interface CheckItem {
   name: string
   answerType: AnswerType
   order: number
+  isRequired: boolean
   createdAt: string
 }
 

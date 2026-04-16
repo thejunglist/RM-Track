@@ -63,6 +63,17 @@ onMounted(async () => {
 })
 
 async function finish() {
+  // Validate required items
+  const missing = checkItems.value.filter(item => {
+    if (!item.isRequired) return false
+    const val = getAnswer(item.id).value
+    return !val || val.trim() === ''
+  })
+  if (missing.length > 0) {
+    error.value = `Please fill in the following required fields: ${missing.map(i => i.name).join(', ')}`
+    return
+  }
+
   saving.value = true
   try {
     const payload = checkItems.value.map(item => ({
@@ -110,7 +121,10 @@ async function finish() {
       <v-card v-else flat>
         <v-card-text>
           <div v-for="item in checkItems" :key="item.id" class="mb-5">
-            <p class="text-subtitle-1 font-weight-medium mb-2">{{ item.name }}</p>
+            <p class="text-subtitle-1 font-weight-medium mb-2">
+              {{ item.name }}
+              <span v-if="item.isRequired" class="text-error ml-1" title="Required">*</span>
+            </p>
 
             <v-btn-toggle
               v-if="item.answerType === 'YES_NO'"
