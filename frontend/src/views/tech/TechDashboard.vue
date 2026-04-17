@@ -15,6 +15,7 @@ const checks = ref<MonthlyCheck[]>([])
 const loading = ref(true)
 const error = ref('')
 const showHistory = ref(false)
+const showCompleted = ref(false)
 
 const now = new Date()
 const currentMonth = now.getMonth() + 1
@@ -60,6 +61,21 @@ async function startOrOpen(assignment: RoomAssignment) {
   }
 }
 
+// Split assignments into pending/in-progress and completed
+const pendingAssignments = computed(() =>
+  assignments.value.filter(a => checkForRoom(a.roomId)?.status !== 'COMPLETED')
+)
+const completedAssignments = computed(() =>
+  assignments.value.filter(a => checkForRoom(a.roomId)?.status === 'COMPLETED')
+)
+
+const completedCount = computed(() => completedAssignments.value.length)
+const totalCount = computed(() => assignments.value.length)
+const progressPct = computed(() =>
+  totalCount.value ? Math.round((completedCount.value / totalCount.value) * 100) : 0
+)
+const allDone = computed(() => totalCount.value > 0 && completedCount.value === totalCount.value)
+
 // Past checks — all checks not from the current month/year
 const pastChecks = computed(() => {
   return checks.value
@@ -94,17 +110,31 @@ function roomLabel(c: MonthlyCheck) {
 <template>
   <AppLayout>
     <h2 class="text-h5 mb-1">My Rooms</h2>
-    <p class="text-medium-emphasis mb-6">{{ monthLabel }}</p>
+    <p class="text-medium-emphasis mb-4">{{ monthLabel }}</p>
 
     <v-alert v-if="error" type="error" class="mb-4">{{ error }}</v-alert>
 
     <v-progress-circular v-if="loading" indeterminate class="d-block mx-auto" />
 
     <template v-else>
-      <!-- Current month room cards -->
-      <v-row>
+      <!-- Progress bar -->
+      <div v-if="totalCount > 0" class="mb-6">
+        <div class="d-flex justify-space-between mb-1">
+          <span class="text-body-2 text-medium-emphasis">{{ completedCount }} of {{ totalCount }} rooms checked</span>
+          <span class="text-body-2 font-weight-medium">{{ progressPct }}%</span>
+        </div>
+        <v-progress-linear :model-value="progressPct" color="success" rounded height="8" />
+      </div>
+
+      <!-- All done banner -->
+      <v-alert v-if="allDone" type="success" variant="tonal" class="mb-4" icon="mdi-check-circle">
+        All rooms checked for {{ monthLabel }}!
+      </v-alert>
+
+      <!-- Pending / in-progress rooms -->
+      <v-row v-if="pendingAssignments.length > 0">
         <v-col
-          v-for="a in assignments"
+          v-for="a in pendingAssignments"
           :key="a.id"
           cols="12"
           sm="6"
@@ -125,13 +155,44 @@ function roomLabel(c: MonthlyCheck) {
             </v-card-text>
           </v-card>
         </v-col>
-        <v-col v-if="assignments.length === 0" cols="12">
-          <v-alert type="info">You have no rooms assigned for this month.</v-alert>
-        </v-col>
       </v-row>
 
+      <v-alert v-else-if="!allDone && assignments.length === 0" type="info">
+        You have no rooms assigned for this month.
+      </v-alert>
+
+      <!-- Completed rooms (collapsible) -->
+      <div v-if="completedAssignments.length > 0" class="mt-6">
+        <div class="d-flex align-center mb-3 cursor-pointer" @click="showCompleted = !showCompleted">
+          <v-icon class="mr-2" size="small">{{ showCompleted ? 'mdi-chevron-down' : 'mdi-chevron-right' }}</v-icon>
+          <h3 class="text-subtitle-1 font-weight-medium">
+            Completed this month ({{ completedCount }})
+          </h3>
+        </div>
+        <template v-if="showCompleted">
+          <v-card variant="outlined">
+            <v-list density="compact">
+              <v-list-item
+                v-for="a in completedAssignments"
+                :key="a.id"
+                :subtitle="a.room?.building?.name"
+                @click="startOrOpen(a)"
+                hover
+              >
+                <template #title>
+                  {{ a.room?.number }}<span v-if="a.room?.name"> — {{ a.room.name }}</span>
+                </template>
+                <template #append>
+                  <v-chip color="success" size="x-small">COMPLETED</v-chip>
+                </template>
+              </v-list-item>
+            </v-list>
+          </v-card>
+        </template>
+      </div>
+
       <!-- History section -->
-      <div v-if="pastChecks.length > 0" class="mt-8">
+      <div v-if="pastChecks.length > 0" class="mt-6">
         <div class="d-flex align-center mb-3 cursor-pointer" @click="showHistory = !showHistory">
           <v-icon class="mr-2" size="small">{{ showHistory ? 'mdi-chevron-down' : 'mdi-chevron-right' }}</v-icon>
           <h3 class="text-subtitle-1 font-weight-medium">Previous Checks ({{ pastChecks.length }})</h3>
@@ -149,9 +210,7 @@ function roomLabel(c: MonthlyCheck) {
                   @click="router.push(`/tech/check/${c.id}`)"
                   hover
                 >
-                  <template #title>
-                    {{ roomLabel(c) }}
-                  </template>
+                  <template #title>{{ roomLabel(c) }}</template>
                   <template #append>
                     <v-chip :color="statusColor(c.status)" size="x-small">{{ c.status }}</v-chip>
                   </template>
