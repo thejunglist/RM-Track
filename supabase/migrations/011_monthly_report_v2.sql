@@ -32,16 +32,14 @@ begin
                       'number', r.number,
                       'floor',  r.floor,
                       'name',   r.name,
-                      -- Overdue: no completed check in the 3-month window ending at p_month/p_year
+                      -- Overdue: no completed check in the current month
                       'overdue', not exists (
                         select 1
                         from public.monthly_checks mc2
                         where mc2.room_id = r.id
                           and mc2.status = 'COMPLETED'
-                          and make_date(mc2.year, mc2.month, 1)
-                                >= (make_date(p_year, p_month, 1) - interval '2 months')
-                          and make_date(mc2.year, mc2.month, 1)
-                                <= make_date(p_year, p_month, 1)
+                          and mc2.month = p_month
+                          and mc2.year  = p_year
                       ),
                       'checks', coalesce(
                         (

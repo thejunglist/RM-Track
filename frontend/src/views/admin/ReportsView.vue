@@ -123,7 +123,7 @@ const stats = computed(() => {
           <v-card variant="tonal" :color="stats.overdue > 0 ? 'error' : 'grey'">
             <v-card-text class="text-center">
               <div class="text-h4">{{ stats.overdue }}</div>
-              <div class="text-caption">Overdue (3+ months)</div>
+              <div class="text-caption">Not checked this month</div>
             </v-card-text>
           </v-card>
         </v-col>
@@ -151,7 +151,7 @@ const stats = computed(() => {
         icon="mdi-alert-circle"
         class="mb-6"
       >
-        <strong>{{ stats.overdue }} room{{ stats.overdue > 1 ? 's have' : ' has' }} not been checked in 3 or more months.</strong>
+        <strong>{{ stats.overdue }} room{{ stats.overdue > 1 ? 's have' : ' has' }} not been checked this month.</strong>
         These are marked below with an OVERDUE badge.
       </v-alert>
 
