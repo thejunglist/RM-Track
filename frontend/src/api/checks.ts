@@ -2,14 +2,16 @@ import { supabase } from '../lib/supabase'
 import type { MonthlyCheck } from '../types'
 
 const SELECT_LIST = `
-  id, roomId:room_id, techId:tech_id, month, year, status,
+  id, roomId:room_id, techId:tech_id, partnerId:partner_id, month, year, status,
   completedAt:completed_at, createdAt:created_at,
-  room:rooms(id, number, name, building:buildings(id, name))
+  room:rooms(id, number, name, building:buildings(id, name)),
+  partner:profiles!partner_id(id, name)
 `.trim()
 
 const SELECT_DETAIL = `
-  id, roomId:room_id, techId:tech_id, month, year, status,
+  id, roomId:room_id, techId:tech_id, partnerId:partner_id, month, year, status,
   completedAt:completed_at, createdAt:created_at,
+  partner:profiles!partner_id(id, name),
   room:rooms(
     id, buildingId:building_id, number, floor, name, createdAt:created_at,
     building:buildings(id, name, location, createdAt:created_at),
@@ -44,13 +46,24 @@ export async function getCheck(id: number): Promise<MonthlyCheck> {
   return data as unknown as MonthlyCheck
 }
 
-export async function createCheck(input: { roomId: number; month: number; year: number }): Promise<MonthlyCheck> {
+export async function createCheck(input: {
+  roomId: number
+  month: number
+  year: number
+  partnerId?: string
+}): Promise<MonthlyCheck> {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) throw new Error('Not authenticated')
 
   const { data, error } = await supabase
     .from('monthly_checks')
-    .insert({ room_id: input.roomId, month: input.month, year: input.year, tech_id: session.user.id })
+    .insert({
+      room_id: input.roomId,
+      month: input.month,
+      year: input.year,
+      tech_id: session.user.id,
+      partner_id: input.partnerId ?? null,
+    })
     .select(SELECT_LIST)
     .single()
   if (error) throw error

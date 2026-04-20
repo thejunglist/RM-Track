@@ -60,6 +60,8 @@ export interface MonthlyCheck {
   room?: Room
   techId: string   // UUID
   tech?: { id: string; name: string }
+  partnerId?: string  // UUID — optional second tech
+  partner?: { id: string; name: string }
   month: number
   year: number
   status: CheckStatus
@@ -82,6 +84,8 @@ export interface RoomAssignment {
   id: number
   techId: string   // UUID
   tech?: { id: string; name: string; email: string }
+  partnerId?: string  // UUID — optional second tech
+  partner?: { id: string; name: string; email: string }
   roomId: number
   room?: Room
   createdAt: string

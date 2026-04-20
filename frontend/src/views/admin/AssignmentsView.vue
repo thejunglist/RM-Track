@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import AppLayout from '../../components/AppLayout.vue'
 import { getAssignments, createAssignment, deleteAssignment } from '../../api/assignments'
 import { getUsers } from '../../api/users'
@@ -14,12 +14,18 @@ const buildings = ref<Building[]>([])
 const loading = ref(true)
 const dialog = ref(false)
 const saving = ref(false)
-const form = ref({ techId: '' as string, buildingId: 0 })
+const form = ref({ techId: '' as string, partnerId: '' as string, buildingId: 0 })
 
-const techs = () => users.value.filter(u => u.role === 'TECH')
+const techs = computed(() => users.value.filter(u => u.role === 'TECH'))
+
+// Partner options exclude the selected primary tech
+const partnerOptions = computed(() =>
+  techs.value.filter(u => u.id !== form.value.techId)
+)
 
 const headers = [
   { title: 'Tech', key: 'tech.name' },
+  { title: 'Partner', key: 'partner.name' },
   { title: 'Room', key: 'room.number' },
   { title: 'Building', key: 'room.building.name' },
   { title: 'Actions', key: 'actions', sortable: false, align: 'end' as const },
@@ -38,7 +44,8 @@ async function load() {
 onMounted(load)
 
 function openCreate() {
-  form.value = { techId: techs()[0]?.id ?? '', buildingId: buildings.value[0]?.id ?? 0 }
+  const firstTech = techs.value[0]?.id ?? ''
+  form.value = { techId: firstTech, partnerId: '', buildingId: buildings.value[0]?.id ?? 0 }
   dialog.value = true
 }
 
@@ -48,7 +55,11 @@ async function save() {
     const buildingRooms = rooms.value.filter(r => r.buildingId === form.value.buildingId)
     await Promise.all(
       buildingRooms.map(r =>
-        createAssignment({ techId: form.value.techId, roomId: r.id }).catch(() => {})
+        createAssignment({
+          techId: form.value.techId,
+          roomId: r.id,
+          partnerId: form.value.partnerId || undefined,
+        }).catch(() => {})
       )
     )
     dialog.value = false
@@ -71,6 +82,10 @@ async function remove(a: RoomAssignment) {
     </div>
 
     <v-data-table :headers="headers" :items="assignments" :loading="loading" hover>
+      <template #item.partner.name="{ item }">
+        <span v-if="item.partner?.name">{{ item.partner.name }}</span>
+        <span v-else class="text-medium-emphasis">—</span>
+      </template>
       <template #item.actions="{ item }">
         <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click="remove(item)" />
       </template>
@@ -81,9 +96,15 @@ async function remove(a: RoomAssignment) {
         <v-card-text class="d-flex flex-column gap-2">
           <v-select
             v-model="form.techId"
-            :items="techs().map(u => ({ title: u.name + ' (' + u.email + ')', value: u.id }))"
+            :items="techs.map(u => ({ title: u.name + ' (' + u.email + ')', value: u.id }))"
             item-title="title" item-value="value"
-            label="Technician" required
+            label="Primary Technician" required
+          />
+          <v-select
+            v-model="form.partnerId"
+            :items="[{ title: 'No partner (solo)', value: '' }, ...partnerOptions.map(u => ({ title: u.name + ' (' + u.email + ')', value: u.id }))]"
+            item-title="title" item-value="value"
+            label="Partner (optional)"
           />
           <v-select
             v-model="form.buildingId"

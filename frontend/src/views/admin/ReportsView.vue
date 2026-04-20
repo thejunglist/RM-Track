@@ -33,7 +33,13 @@ const statusIcon = (status: string) =>
   ({ PENDING: 'mdi-clock-outline', IN_PROGRESS: 'mdi-progress-check', COMPLETED: 'mdi-check-circle' })[status] ?? 'mdi-help'
 
 function roomStatus(room: any) { return room.checks?.[0]?.status ?? 'PENDING' }
-function techName(room: any)   { return room.checks?.[0]?.tech?.name ?? '—' }
+function techName(room: any) {
+  const check = room.checks?.[0]
+  if (!check) return '—'
+  const name = check.tech?.name ?? '—'
+  const partner = check.tech?.partnerName
+  return partner ? `${name} & ${partner}` : name
+}
 function completedAt(room: any) {
   const d = room.checks?.[0]?.completedAt
   return d ? new Date(d).toLocaleDateString() : '—'

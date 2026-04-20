@@ -45,14 +45,38 @@ function checkForRoom(roomId: number) {
 const statusColor = (status: string) =>
   ({ PENDING: 'warning', IN_PROGRESS: 'info', COMPLETED: 'success' })[status] ?? 'grey'
 
+// Work out the partner for this assignment from the current user's perspective
+function partnerName(a: RoomAssignment): string | null {
+  const myId = auth.user!.id
+  if (a.techId === myId) {
+    // I'm the primary tech — partner is the other person
+    return a.partner?.name ?? null
+  } else {
+    // I'm the partner — primary tech is the other person
+    return a.tech?.name ?? null
+  }
+}
+
 async function startOrOpen(assignment: RoomAssignment) {
   const existing = checkForRoom(assignment.roomId)
   if (existing) {
     router.push(`/tech/check/${existing.id}`)
     return
   }
+
+  // Determine who the partner is from this user's perspective
+  const myId = auth.user!.id
+  const otherId = assignment.techId === myId
+    ? assignment.partnerId   // I'm primary, partner is set on assignment
+    : assignment.techId      // I'm the partner, primary tech is the other person
+
   try {
-    const check = await createCheck({ roomId: assignment.roomId, month: currentMonth, year: currentYear })
+    const check = await createCheck({
+      roomId: assignment.roomId,
+      month: currentMonth,
+      year: currentYear,
+      partnerId: otherId || undefined,
+    })
     router.push(`/tech/check/${check.id}`)
   } catch (e: any) {
     if (e.response?.data?.existing) {
@@ -144,7 +168,10 @@ function roomLabel(c: MonthlyCheck) {
             <v-card-title>
               {{ a.room?.number }}<span v-if="a.room?.name"> — {{ a.room.name }}</span>
             </v-card-title>
-            <v-card-subtitle>{{ a.room?.building?.name }}</v-card-subtitle>
+            <v-card-subtitle>
+              {{ a.room?.building?.name }}
+              <span v-if="partnerName(a)" class="ml-1">· with {{ partnerName(a) }}</span>
+            </v-card-subtitle>
             <v-card-text>
               <v-chip
                 :color="statusColor(checkForRoom(a.roomId)?.status ?? 'PENDING')"
@@ -175,7 +202,7 @@ function roomLabel(c: MonthlyCheck) {
               <v-list-item
                 v-for="a in completedAssignments"
                 :key="a.id"
-                :subtitle="a.room?.building?.name"
+                :subtitle="a.room?.building?.name + (partnerName(a) ? ' · with ' + partnerName(a) : '')"
                 @click="startOrOpen(a)"
                 hover
               >
@@ -206,7 +233,7 @@ function roomLabel(c: MonthlyCheck) {
                 <v-list-item
                   v-for="c in group.checks"
                   :key="c.id"
-                  :subtitle="c.room?.building?.name"
+                  :subtitle="c.room?.building?.name + (c.partner?.name ? ' · with ' + c.partner.name : '')"
                   @click="router.push(`/tech/check/${c.id}`)"
                   hover
                 >
