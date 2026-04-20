@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import AppLayout from '../../components/AppLayout.vue'
 import { getBuildings, createBuilding, updateBuilding, deleteBuilding, bulkImportBuildings } from '../../api/buildings'
-import type { Building } from '../../types'
+import { getAssignments } from '../../api/assignments'
+import type { Building, RoomAssignment } from '../../types'
 
-// ── Existing state ────────────────────────────────────────────────────────────
 const buildings = ref<Building[]>([])
+const assignments = ref<RoomAssignment[]>([])
 const loading = ref(true)
 const dialog = ref(false)
 const delDialog = ref(false)
@@ -16,13 +17,31 @@ const form = ref({ name: '', location: '' })
 const headers = [
   { title: 'Name', key: 'name' },
   { title: 'Location', key: 'location' },
+  { title: 'Assigned Techs', key: 'techs', sortable: false },
   { title: 'Actions', key: 'actions', sortable: false, align: 'end' as const },
 ]
 
 async function load() {
   loading.value = true
-  buildings.value = await getBuildings()
+  ;[buildings.value, assignments.value] = await Promise.all([getBuildings(), getAssignments()])
   loading.value = false
+}
+
+// Map building name → unique tech names (primary + partner)
+const techsByBuilding = computed(() => {
+  const map = new Map<string, Set<string>>()
+  for (const a of assignments.value) {
+    const building = a.room?.building?.name
+    if (!building) continue
+    if (!map.has(building)) map.set(building, new Set())
+    if (a.tech?.name) map.get(building)!.add(a.tech.name)
+    if (a.partner?.name) map.get(building)!.add(a.partner.name)
+  }
+  return map
+})
+
+function buildingTechs(name: string): string[] {
+  return Array.from(techsByBuilding.value.get(name) ?? []).sort()
 }
 
 onMounted(load)
@@ -164,6 +183,18 @@ async function confirmImport() {
     </div>
 
     <v-data-table :headers="headers" :items="buildings" :loading="loading" hover>
+      <template #item.techs="{ item }">
+        <template v-if="buildingTechs(item.name).length > 0">
+          <v-chip
+            v-for="t in buildingTechs(item.name)"
+            :key="t"
+            size="x-small"
+            class="mr-1"
+            variant="tonal"
+          >{{ t }}</v-chip>
+        </template>
+        <span v-else class="text-medium-emphasis text-caption">None</span>
+      </template>
       <template #item.actions="{ item }">
         <v-btn icon="mdi-pencil" size="small" variant="text" @click="openEdit(item)" />
         <v-btn icon="mdi-delete" size="small" variant="text" color="error" @click="openDelete(item)" />
