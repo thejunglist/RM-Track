@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import AppLayout from '../../components/AppLayout.vue'
 import { getUsers, createUser, updateUser, deleteUser } from '../../api/users'
-import type { User } from '../../types'
+import { getAssignments } from '../../api/assignments'
+import type { User, RoomAssignment } from '../../types'
 
 const users = ref<User[]>([])
+const assignments = ref<RoomAssignment[]>([])
 const loading = ref(true)
 const dialog = ref(false)
 const delDialog = ref(false)
@@ -19,16 +21,39 @@ const headers = [
   { title: 'Name', key: 'name' },
   { title: 'Email', key: 'email' },
   { title: 'Role', key: 'role' },
+  { title: 'Assigned Buildings', key: 'buildings', sortable: false },
   { title: 'Created', key: 'createdAt' },
   { title: 'Actions', key: 'actions', sortable: false, align: 'end' as const },
 ]
 
 async function load() {
   loading.value = true
-  users.value = await getUsers()
+  ;[users.value, assignments.value] = await Promise.all([getUsers(), getAssignments()])
   loading.value = false
 }
 onMounted(load)
+
+// Build a map: userId → unique sorted building names
+const buildingsByUser = computed(() => {
+  const map = new Map<string, Set<string>>()
+  for (const a of assignments.value) {
+    const building = a.room?.building?.name
+    if (!building) continue
+    // Primary tech
+    if (!map.has(a.techId)) map.set(a.techId, new Set())
+    map.get(a.techId)!.add(building)
+    // Partner (if set)
+    if (a.partnerId) {
+      if (!map.has(a.partnerId)) map.set(a.partnerId, new Set())
+      map.get(a.partnerId)!.add(building)
+    }
+  }
+  return map
+})
+
+function userBuildings(userId: string): string[] {
+  return Array.from(buildingsByUser.value.get(userId) ?? []).sort()
+}
 
 function openCreate() {
   selected.value = null
@@ -88,6 +113,22 @@ function formatDate(d: string) {
     <v-data-table :headers="headers" :items="users" :loading="loading" hover>
       <template #item.role="{ item }">
         <v-chip :color="item.role === 'ADMIN' ? 'primary' : 'default'" size="small">{{ item.role }}</v-chip>
+      </template>
+      <template #item.buildings="{ item }">
+        <template v-if="item.role === 'ADMIN'">
+          <span class="text-medium-emphasis">—</span>
+        </template>
+        <template v-else-if="userBuildings(item.id).length > 0">
+          <v-chip
+            v-for="b in userBuildings(item.id)"
+            :key="b"
+            size="x-small"
+            class="mr-1"
+            variant="tonal"
+            color="primary"
+          >{{ b }}</v-chip>
+        </template>
+        <span v-else class="text-medium-emphasis text-caption">No assignments</span>
       </template>
       <template #item.createdAt="{ item }">{{ formatDate(item.createdAt) }}</template>
       <template #item.actions="{ item }">
