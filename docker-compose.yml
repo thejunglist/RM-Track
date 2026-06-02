@@ -1,0 +1,49 @@
+include:
+  - path: ./supabase/docker/docker-compose.yml
+    env_file: .env
+
+services:
+
+  # ── Express backend ──────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: rmtrack-backend
+    restart: unless-stopped
+    environment:
+      PORT: 3001
+      NODE_ENV: production
+      CLIENT_ORIGIN: ${SITE_URL}
+      DATABASE_URL: file:/data/db.sqlite
+      JWT_SECRET: ${JWT_SECRET_EXPRESS}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+    volumes:
+      - sqlite_data:/data
+    networks:
+      - default
+
+  # ── Nginx reverse proxy + Vue static files ───────────────────
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+      args:
+        VITE_SUPABASE_URL: ${SITE_URL}
+        VITE_SUPABASE_ANON_KEY: ${ANON_KEY}
+    container_name: rmtrack-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "5555:5555"
+    volumes:
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    networks:
+      - default
+    depends_on:
+      - backend
+      - supabase-kong
+
+volumes:
+  sqlite_data:
