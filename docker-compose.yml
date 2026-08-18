@@ -1,6 +1,3 @@
-include:
-  - path: ./supabase/docker/docker-compose.yml
-
 services:
 
   # ── Express backend ──────────────────────────────────────────

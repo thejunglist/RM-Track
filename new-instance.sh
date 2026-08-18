@@ -193,7 +193,12 @@ if [[ "${START,,}" == "y" ]]; then
   cp "${ENV_FILE}" supabase/docker/.env
 
   info "Starting stack (project: ${GROUP_NAME})..."
-  docker compose --project-name "${GROUP_NAME}" --env-file "${ENV_FILE}" up -d --build
+  docker compose \
+    -f supabase/docker/docker-compose.yml \
+    -f docker-compose.yml \
+    --project-name "${GROUP_NAME}" \
+    --env-file "${ENV_FILE}" \
+    up -d --build
   success "Stack started."
   echo ""
   echo "Next steps:"
@@ -213,9 +218,9 @@ if [[ "${START,,}" == "y" ]]; then
   echo "     WHERE id = '<user-uuid>';"
 else
   echo "To start later, run:"
-  echo "  cp ${ENV_FILE} .env"
-  echo "  cp ${ENV_FILE} supabase/docker/.env"
-  echo "  docker compose --project-name ${GROUP_NAME} --env-file ${ENV_FILE} up -d --build"
+  echo "  cp ${ENV_FILE} .env && cp ${ENV_FILE} supabase/docker/.env"
+  echo "  docker compose -f supabase/docker/docker-compose.yml -f docker-compose.yml \\"
+  echo "    --project-name ${GROUP_NAME} --env-file ${ENV_FILE} up -d --build"
 fi
 
 echo ""
