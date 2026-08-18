@@ -60,7 +60,7 @@ export async function bulkImportEquipment(req: Request, res: Response): Promise<
   const result = await prisma.equipment.createMany({
     data: parsed.data,
     skipDuplicates: true,
-  })
+  } as any)
 
   res.status(201).json({ imported: result.count, skipped: parsed.data.length - result.count })
 }

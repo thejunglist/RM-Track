@@ -69,7 +69,7 @@ export async function bulkImportRooms(req: Request, res: Response): Promise<void
   const result = await prisma.room.createMany({
     data: parsed.data,
     skipDuplicates: true,
-  })
+  } as any)
 
   res.status(201).json({ imported: result.count, skipped: parsed.data.length - result.count })
 }
