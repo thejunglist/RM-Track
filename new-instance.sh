@@ -50,6 +50,9 @@ info "Generating secrets..."
 POSTGRES_PASSWORD=$(openssl rand -base64 32)
 JWT_SECRET=$(openssl rand -base64 32)
 JWT_SECRET_EXPRESS=$(openssl rand -hex 32)
+SECRET_KEY_BASE=$(openssl rand -hex 64)
+PG_META_CRYPTO_KEY=$(openssl rand -hex 32)
+VAULT_ENC_KEY=$(openssl rand -hex 32)
 
 # Generate Supabase-compatible JWTs (anon + service_role) signed with JWT_SECRET
 read -r ANON_KEY SERVICE_ROLE_KEY < <(python3 - "$JWT_SECRET" <<'PYEOF'
@@ -83,31 +86,88 @@ cat > "$ENV_FILE" <<EOF
 # RM-Track instance: ${GROUP_NAME}
 # Created: $(date -u +"%Y-%m-%d %H:%M UTC")
 
+# ── URLs ──────────────────────────────────────────────────────
 SITE_URL=${SITE_URL}
+SUPABASE_PUBLIC_URL=${SITE_URL}
+API_EXTERNAL_URL=${SITE_URL}
 
-# PostgreSQL
-POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+# ── PostgreSQL ────────────────────────────────────────────────
+POSTGRES_HOST=db
+POSTGRES_PORT=5432
 POSTGRES_DB=postgres
 POSTGRES_USER=postgres
+POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
 
-# Supabase
+# ── Supabase secrets ──────────────────────────────────────────
 JWT_SECRET=${JWT_SECRET}
+JWT_EXPIRY=3600
 ANON_KEY=${ANON_KEY}
 SERVICE_ROLE_KEY=${SERVICE_ROLE_KEY}
+SUPABASE_PUBLISHABLE_KEY=${ANON_KEY}
+SUPABASE_SECRET_KEY=${SERVICE_ROLE_KEY}
+SECRET_KEY_BASE=${SECRET_KEY_BASE}
+VAULT_ENC_KEY=${VAULT_ENC_KEY}
 
-# Express backend
+# ── PostgREST ─────────────────────────────────────────────────
+PGRST_DB_SCHEMAS=public,storage,graphql_public
+
+# ── Auth ──────────────────────────────────────────────────────
+ENABLE_EMAIL_SIGNUP=true
+ENABLE_EMAIL_AUTOCONFIRM=true
+ENABLE_PHONE_SIGNUP=false
+ENABLE_PHONE_AUTOCONFIRM=false
+ENABLE_ANONYMOUS_USERS=false
+DISABLE_SIGNUP=false
+ADDITIONAL_REDIRECT_URLS=
+MAILER_URLPATHS_CONFIRMATION=/auth/v1/verify
+MAILER_URLPATHS_INVITE=/auth/v1/verify
+MAILER_URLPATHS_RECOVERY=/auth/v1/verify
+MAILER_URLPATHS_EMAIL_CHANGE=/auth/v1/verify
+
+# ── SMTP (disabled — using autoconfirm instead) ───────────────
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
+SMTP_ADMIN_EMAIL=admin@example.com
+SMTP_SENDER_NAME=RM-Track
+
+# ── Storage ───────────────────────────────────────────────────
+STORAGE_TENANT_ID=stub
+S3_PROTOCOL_ACCESS_KEY_ID=stub
+S3_PROTOCOL_ACCESS_KEY_SECRET=stub
+GLOBAL_S3_BUCKET=stub
+REGION=us-east-1
+IMGPROXY_AUTO_WEBP=true
+
+# ── Edge Functions ────────────────────────────────────────────
+FUNCTIONS_VERIFY_JWT=false
+
+# ── pg-meta ───────────────────────────────────────────────────
+PG_META_CRYPTO_KEY=${PG_META_CRYPTO_KEY}
+
+# ── Studio ────────────────────────────────────────────────────
+STUDIO_DEFAULT_ORGANIZATION=RM-Track
+STUDIO_DEFAULT_PROJECT=${GROUP_NAME}
+DASHBOARD_USERNAME=admin
+DASHBOARD_PASSWORD=${DASHBOARD_PASSWORD}
+
+# ── Connection pooler ─────────────────────────────────────────
+POOLER_PROXY_PORT_TRANSACTION=6543
+POOLER_DEFAULT_POOL_SIZE=20
+POOLER_DB_POOL_SIZE=5
+POOLER_MAX_CLIENT_CONN=100
+POOLER_TENANT_ID=default
+
+# ── Express backend ───────────────────────────────────────────
 JWT_SECRET_EXPRESS=${JWT_SECRET_EXPRESS}
 JWT_EXPIRES_IN=7d
 
-# Ports (offset per instance to avoid conflicts)
+# ── Ports (offset per instance to avoid conflicts) ────────────
 KONG_HTTP_PORT=${KONG_PORT}
 KONG_HTTPS_PORT=$((KONG_PORT + 1))
 DB_PORT=${DB_PORT}
 STUDIO_PORT=${STUDIO_PORT}
-
-# Studio credentials
-DASHBOARD_USERNAME=admin
-DASHBOARD_PASSWORD=${DASHBOARD_PASSWORD}
 EOF
 
 success "Created $ENV_FILE"

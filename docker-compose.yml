@@ -42,7 +42,7 @@ services:
       - default
     depends_on:
       - backend
-      - supabase-kong
+      - kong
 
 volumes:
   sqlite_data:
