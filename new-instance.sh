@@ -128,6 +128,9 @@ echo ""
 # ── Optionally start ──────────────────────────────────────────
 read -rp "Start this instance now? [y/N] " START
 if [[ "${START,,}" == "y" ]]; then
+  info "Linking .env → ${ENV_FILE} (required by Docker Compose include)..."
+  ln -sf "${ENV_FILE}" .env
+
   info "Starting stack (project: ${GROUP_NAME})..."
   docker compose --project-name "${GROUP_NAME}" --env-file "${ENV_FILE}" up -d --build
   success "Stack started."
@@ -149,6 +152,7 @@ if [[ "${START,,}" == "y" ]]; then
   echo "     WHERE id = '<user-uuid>';"
 else
   echo "To start later, run:"
+  echo "  ln -sf ${ENV_FILE} .env"
   echo "  docker compose --project-name ${GROUP_NAME} --env-file ${ENV_FILE} up -d --build"
 fi
 
