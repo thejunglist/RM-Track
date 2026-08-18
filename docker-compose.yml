@@ -39,7 +39,6 @@ services:
       - default
     depends_on:
       - backend
-      - kong
 
 volumes:
   sqlite_data:
