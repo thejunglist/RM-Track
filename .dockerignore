@@ -1,0 +1,7 @@
+supabase/docker/volumes/
+node_modules/
+*/node_modules/
+.git/
+nginx/ssl/
+*.env.*
+.env
