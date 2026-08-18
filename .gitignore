@@ -3,5 +3,6 @@ dist/
 .env
 .env.*
 nginx/ssl/
+supabase/docker/.env
 *.db
 *.db-journal

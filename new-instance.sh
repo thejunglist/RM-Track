@@ -128,8 +128,9 @@ echo ""
 # ── Optionally start ──────────────────────────────────────────
 read -rp "Start this instance now? [y/N] " START
 if [[ "${START,,}" == "y" ]]; then
-  info "Linking .env → ${ENV_FILE} (required by Docker Compose include)..."
-  ln -sf "${ENV_FILE}" .env
+  info "Copying ${ENV_FILE} → .env and supabase/docker/.env..."
+  cp "${ENV_FILE}" .env
+  cp "${ENV_FILE}" supabase/docker/.env
 
   info "Starting stack (project: ${GROUP_NAME})..."
   docker compose --project-name "${GROUP_NAME}" --env-file "${ENV_FILE}" up -d --build
@@ -152,7 +153,8 @@ if [[ "${START,,}" == "y" ]]; then
   echo "     WHERE id = '<user-uuid>';"
 else
   echo "To start later, run:"
-  echo "  ln -sf ${ENV_FILE} .env"
+  echo "  cp ${ENV_FILE} .env"
+  echo "  cp ${ENV_FILE} supabase/docker/.env"
   echo "  docker compose --project-name ${GROUP_NAME} --env-file ${ENV_FILE} up -d --build"
 fi
 
