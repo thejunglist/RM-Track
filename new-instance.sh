@@ -30,9 +30,14 @@ if [[ -f "$ENV_FILE" ]]; then
   echo "Error: $ENV_FILE already exists. Choose a different group name or delete the file first."; exit 1
 fi
 
-read -rp "Site URL for this group (e.g. https://campus.rmtrack.uni.ac.uk): " SITE_URL
+read -rp "Site URL for this group (e.g. http://130.159.75.38 or https://campus.rmtrack.uni.ac.uk): " SITE_URL
 if [[ -z "$SITE_URL" ]]; then
   echo "Error: site URL cannot be empty."; exit 1
+fi
+# Auto-prepend http:// if no protocol given
+if [[ "$SITE_URL" != http://* && "$SITE_URL" != https://* ]]; then
+  SITE_URL="http://${SITE_URL}"
+  warn "No protocol found — using: $SITE_URL"
 fi
 
 # ── Port offset ───────────────────────────────────────────────
