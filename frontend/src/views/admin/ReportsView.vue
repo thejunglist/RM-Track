@@ -60,10 +60,11 @@ const stats = computed(() => {
   <AppLayout>
     <h2 class="text-h5 mb-4">Reports</h2>
 
-    <div class="d-flex gap-4 align-center mb-6">
+    <div class="d-flex align-center mb-6" style="gap: 16px;">
       <v-select v-model="month" :items="months" item-title="title" item-value="value"
         label="Month" density="compact" style="max-width:160px" />
       <v-select v-model="year" :items="years" label="Year" density="compact" style="max-width:110px" />
+      
       <v-btn color="primary" :loading="loading" @click="load">Load</v-btn>
     </div>
 

@@ -46,7 +46,7 @@ const years = [2024, 2025, 2026, 2027]
       <v-select v-model="month" :items="months" item-title="title" item-value="value"
         label="Month" density="compact" style="max-width:160px" />
       <v-select v-model="year" :items="years" label="Year" density="compact" style="max-width:110px" />
-      <v-btn color="primary" :loading="loading" @click="load">Load</v-btn>
+      <v-btn color="primary" :loading="loading" @click="load" class ="ml-5 mb-6 ">Load</v-btn>
     </div>
 
     <v-progress-circular v-if="loading" indeterminate class="d-block mx-auto" />

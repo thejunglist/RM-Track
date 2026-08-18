@@ -5,7 +5,8 @@
       "Bash(mkdir -p \"/c/Users/hwb22153/OneDrive - University of Strathclyde/Documents/Lss-room-tracker/backend/src/routes\")",
       "Bash(mkdir -p \"/c/Users/hwb22153/OneDrive - University of Strathclyde/Documents/Lss-room-tracker/backend/src/controllers\")",
       "Bash(mkdir -p \"/c/Users/hwb22153/OneDrive - University of Strathclyde/Documents/Lss-room-tracker/backend/src/lib\")",
-      "Bash(mkdir -p \"/c/Users/hwb22153/OneDrive - University of Strathclyde/Documents/Lss-room-tracker/backend/prisma\")"
+      "Bash(mkdir -p \"/c/Users/hwb22153/OneDrive - University of Strathclyde/Documents/Lss-room-tracker/backend/prisma\")",
+      "Bash(mkdir -p \"C:\\\\Users\\\\hwb22153\\\\dev\\\\RM-Track\\\\nginx\")"
     ]
   }
 }
