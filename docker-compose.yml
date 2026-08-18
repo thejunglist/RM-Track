@@ -3,7 +3,7 @@ services:
   # ── Express backend ──────────────────────────────────────────
   backend:
     build:
-      context: .
+      context: ../..
       dockerfile: backend/Dockerfile
     container_name: rmtrack-backend
     restart: unless-stopped
@@ -22,7 +22,7 @@ services:
   # ── Nginx reverse proxy + Vue static files ───────────────────
   nginx:
     build:
-      context: .
+      context: ../..
       dockerfile: nginx/Dockerfile
       args:
         VITE_SUPABASE_URL: ${SITE_URL}
@@ -34,7 +34,7 @@ services:
       - "443:443"
       - "5555:5555"
     volumes:
-      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ../../nginx/ssl:/etc/nginx/ssl:ro
     networks:
       - default
     depends_on:
